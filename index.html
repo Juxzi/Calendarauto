@@ -30,16 +30,17 @@
   header { background: var(--primary); color: #fff; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
   header span { font-size: .85rem; opacity: .8; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
   label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 3px; }
-  input[type=text], input[type=date], input[type=time], select { border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; font-size: .9rem; width: 100%; }
+  input[type=date], input[type=time], select { border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; font-size: .9rem; width: 100%; }
   input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
   .day-row { display: grid; grid-template-columns: 70px 32px 1fr 1fr auto; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
   .day-row:last-child { border-bottom: none; }
   .day-label { font-weight: 500; font-size: .85rem; }
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
   .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-  .kpi .val { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+  .kpi .val { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
   .kpi .lbl { font-size: .75rem; color: var(--muted); margin-top: 2px; }
   .timeline { position: relative; height: 28px; background: #f3f4f6; border-radius: 4px; overflow: hidden; margin: 4px 0; }
   .tl-bar { position: absolute; height: 100%; opacity: .85; }
@@ -48,7 +49,8 @@
   .badge { display: inline-block; font-size: .7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-left: 4px; }
   .badge-sun { background: #fce7f3; color: #be185d; }
   .badge-hol { background: #fee2e2; color: #dc2626; }
-  .alert { border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; font-size: .85rem; }
+  .alert { border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: .85rem; }
+  .alert-err { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
   .alert-ok { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
   .alert-warn { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
   button { cursor: pointer; border: none; border-radius: 6px; padding: 7px 14px; font-size: .85rem; font-weight: 500; transition: opacity .15s; }
@@ -71,12 +73,8 @@
   .flex { display: flex; gap: 8px; align-items: center; }
   .mt { margin-top: 12px; }
   .mb { margin-bottom: 12px; }
-  .post-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .post-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-  .chip { border:1px solid var(--border); background:#fff; border-radius:999px; padding:4px 10px; font-size:.78rem; cursor:pointer; }
-  .chip.active { background: var(--primary-light); border-color: #93c5fd; color:#1d4ed8; font-weight:600; }
-  .split { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  @media(max-width:700px) { .grid2, .split { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  @media(max-width:700px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -84,7 +82,7 @@
 <header>
   <div>
     <h1>📅 Planning Builder FR</h1>
-    <span>Planification horaire · Calcul jour/nuit/dimanche/férié · Dimensionnement ETP</span>
+    <span>Planification horaire · Calcul jour/nuit/dimanche/férié · Conformité légale</span>
   </div>
   <div style="margin-left:auto; display:flex; gap:8px;">
     <button class="btn-sec btn-sm" onclick="exportCSV()">⬇ CSV</button>
@@ -95,6 +93,7 @@
 <div id="alerts"></div>
 
 <div class="grid2 mb">
+  <!-- PÉRIODE -->
   <div class="card">
     <h2>📆 Période</h2>
     <div class="grid2">
@@ -110,6 +109,7 @@
     <div id="periodInfo" style="margin-top:10px; font-size:.82rem; color:var(--muted);"></div>
   </div>
 
+  <!-- PARAMÈTRES -->
   <div class="card">
     <h2>🇫🇷 Paramètres France</h2>
     <label>Région</label>
@@ -118,48 +118,27 @@
   </div>
 </div>
 
-<div class="card mb">
-  <h2>🧩 Postes</h2>
-  <div class="post-row">
-    <div style="flex:1; min-width:220px;">
-      <label>Poste actif</label>
-      <select id="activePostSelect" onchange="setActivePost(this.value)"></select>
-    </div>
-    <div style="flex:1; min-width:220px;">
-      <label>Renommer le poste actif</label>
-      <input type="text" id="postNameInput" oninput="renameActivePost(this.value)">
-    </div>
-  </div>
-  <div class="flex mt">
-    <button class="btn-primary btn-sm" onclick="addPost()">+ Ajouter poste</button>
-    <button class="btn-sec btn-sm" onclick="duplicateActivePost()">Dupliquer</button>
-    <button class="btn-sec btn-sm" onclick="removeActivePost()">Supprimer</button>
-  </div>
-  <div id="posts-chips" class="post-list"></div>
-</div>
-
+<!-- POSTE -->
 <div class="card mb">
   <h2>🕐 Définition du poste (semaine type)</h2>
-  <div style="font-size:.78rem; color:var(--muted); margin-bottom:10px;">Le tableau ci-dessous concerne le poste actif. Les créneaux passant minuit sont supportés (ex: 21:00 → 05:00).</div>
+  <div style="font-size:.78rem; color:var(--muted); margin-bottom:10px;">Pour chaque jour, activez et saisissez les horaires. Les créneaux passant minuit sont supportés (ex: 21:00 → 05:00).</div>
   <div id="week-table"></div>
   <div class="mt flex">
     <button class="btn-primary btn-sm" onclick="compute()">🔄 Recalculer</button>
-    <button class="btn-sec btn-sm" onclick="resetWeek()">Réinitialiser le poste actif</button>
+    <button class="btn-sec btn-sm" onclick="resetWeek()">Réinitialiser</button>
   </div>
 </div>
 
+<!-- KPI -->
 <div class="card mb">
   <h2>📊 Résultats</h2>
-  <div class="tabs" id="result-tabs">
-    <div class="tab active" onclick="showResultTab('global', this)">Global</div>
-    <div class="tab" onclick="showResultTab('post', this)">Par poste</div>
-  </div>
-  <div id="result-global"></div>
-  <div id="result-post" style="display:none"></div>
+  <div id="kpi-grid" class="kpi-grid"></div>
+  <div id="benchmarks" style="margin-top:12px; font-size:.82rem;"></div>
 </div>
 
+<!-- PLANNING VISUEL -->
 <div class="card mb">
-  <h2>👁 Planning visuel (poste actif)</h2>
+  <h2>👁 Planning visuel</h2>
   <div class="tabs">
     <div class="tab active" onclick="showTab('week', this)">Semaine type</div>
     <div class="tab" onclick="showTab('period', this)">Période</div>
@@ -170,12 +149,25 @@
   <div id="tab-help" style="display:none">
     <div class="help-box">
       <details open>
-        <summary>Dimensionnement multi-ETP</summary>
-        <p>L'outil calcule un volume horaire de poste (couverture), pas un planning salarié unique. Les alertes légales servent d'indicateurs de charge et peuvent impliquer plusieurs ETP.</p>
+        <summary>Comment définir un poste</summary>
+        <p>Choisissez une période (date début → fin), puis pour chaque jour de la semaine, activez le toggle et saisissez heure début / heure fin. Un créneau passant minuit (ex: 21:00 → 05:00) est automatiquement scindé sur deux dates dans les calculs.</p>
       </details>
       <details style="margin-top:10px">
-        <summary>Calcul ETP</summary>
-        <p><b>ETP mensuel principal</b> = moyenne mensuelle d'heures du poste / 151,67 h. Référence annuelle : 1645 h / an.</p>
+        <summary>Calcul jour / nuit / dimanche / férié</summary>
+        <p><b>Jour :</b> 06:00 → 21:00 (exclus). <b>Nuit :</b> 21:00 → 06:00 (couvre 21h–minuit et 0h–6h).<br>
+        <b>Dimanche</b> : tout segment tombant un dimanche est compté séparément (jour ou nuit).<br>
+        <b>Férié</b> : si un jour est férié, ses heures sont comptées en "Férié" (jour ou nuit). <b>Pas de double-compte</b> : une minute compte dans une seule catégorie (priorité : Férié > Dimanche > Jour/Nuit normal).</p>
+      </details>
+      <details style="margin-top:10px">
+        <summary>Règles 12h / 12h repos / 48h</summary>
+        <p><b>Max 12h/jour :</b> aucun shift ne peut dépasser 12h sur une même date.<br>
+        <b>Repos 12h :</b> entre la fin d'un shift et le début du suivant, au moins 12h d'écart.<br>
+        <b>Max 48h/semaine ISO :</b> la somme des heures sur une semaine (Lun→Dim) ne peut dépasser 48h.<br>
+        L'outil signale ces violations par des alertes en rouge et refuse l'export CSV si des erreurs critiques sont détectées.</p>
+      </details>
+      <details style="margin-top:10px">
+        <summary>Jours fériés France (métropole)</summary>
+        <p>Calculés automatiquement pour toute année : 1 Jan, Lundi de Pâques, 1 Mai, 8 Mai, Ascension, Lundi de Pentecôte, 14 Juil, 15 Août, 1 Nov, 11 Nov, 25 Déc.</p>
       </details>
     </div>
   </div>
@@ -184,6 +176,7 @@
 </div>
 
 <script>
+// ===================== JOURS FÉRIÉS =====================
 function easterSunday(y) {
   const a = y % 19, b = Math.floor(y/100), c = y % 100;
   const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
@@ -195,57 +188,132 @@ function easterSunday(y) {
   const day = ((h+l-7*m+114) % 31) + 1;
   return new Date(y, month-1, day);
 }
+
 function getHolidays(y) {
   const e = easterSunday(y);
   const add = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
-  const fmt2 = d => d.toISOString().slice(0,10);
-  return [
-    [fmt2(new Date(y,0,1)), "Jour de l'An"], [fmt2(add(e,1)), "Lundi de Pâques"],
-    [fmt2(new Date(y,4,1)), "Fête du Travail"], [fmt2(new Date(y,4,8)), "Victoire 1945"],
-    [fmt2(add(e,39)), "Ascension"], [fmt2(add(e,50)), "Lundi de Pentecôte"],
-    [fmt2(new Date(y,6,14)), "Fête Nationale"], [fmt2(new Date(y,7,15)), "Assomption"],
-    [fmt2(new Date(y,10,1)), "Toussaint"], [fmt2(new Date(y,10,11)), "Armistice"], [fmt2(new Date(y,11,25)), "Noël"],
+  const fmt = d => d.toISOString().slice(0,10);
+  const list = [
+    [fmt(new Date(y,0,1)), "Jour de l'An"],
+    [fmt(add(e,1)), "Lundi de Pâques"],
+    [fmt(new Date(y,4,1)), "Fête du Travail"],
+    [fmt(new Date(y,4,8)), "Victoire 1945"],
+    [fmt(add(e,39)), "Ascension"],
+    [fmt(add(e,50)), "Lundi de Pentecôte"],
+    [fmt(new Date(y,6,14)), "Fête Nationale"],
+    [fmt(new Date(y,7,15)), "Assomption"],
+    [fmt(new Date(y,10,1)), "Toussaint"],
+    [fmt(new Date(y,10,11)), "Armistice"],
+    [fmt(new Date(y,11,25)), "Noël"],
   ];
+  return list;
 }
+
 function buildHolidaySet(start, end) {
-  const set = {}, years = new Set(); let d = new Date(start);
+  const set = {};
+  const years = new Set();
+  let d = new Date(start);
   while (d <= end) { years.add(d.getFullYear()); d.setDate(d.getDate()+1); }
-  years.forEach(y => getHolidays(y).forEach(([dt, n]) => { set[dt] = n; }));
+  years.forEach(y => {
+    getHolidays(y).forEach(([dt, name]) => { set[dt] = name; });
+  });
   return set;
 }
 
+// ===================== ÉTAT =====================
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const BASE_WEEK = DAYS.map((_, i) => ({ on: i < 5, start:'06:00', end:'14:00' }));
-let posts = [{ id: 1, name: 'Poste 1', week: JSON.parse(JSON.stringify(BASE_WEEK)) }];
-let activePostId = 1;
-let lastResults = null;
+// day index 0=Mon...6=Sun (ISO)
+let week = [
+  {on:true, start:'06:00', end:'14:00'},
+  {on:true, start:'06:00', end:'14:00'},
+  {on:true, start:'06:00', end:'14:00'},
+  {on:true, start:'06:00', end:'14:00'},
+  {on:true, start:'06:00', end:'14:00'},
+  {on:false, start:'06:00', end:'14:00'},
+  {on:false, start:'06:00', end:'14:00'},
+];
+
+// ===================== INIT =====================
+function init() {
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth();
+  const start = new Date(y, m, 1);
+  const end = new Date(y, m+1, 0);
+  document.getElementById('dateStart').value = fmt(start);
+  document.getElementById('dateEnd').value = fmt(end);
+  buildWeekTable();
+  compute();
+}
 
 function fmt(d) { return d.toISOString().slice(0,10); }
 function fmtFR(d) { return d.toLocaleDateString('fr-FR'); }
 function parseDate(s) { const [y,m,d] = s.split('-'); return new Date(+y,+m-1,+d); }
-function minToHM(min) { const h = Math.floor(Math.abs(min)/60), m = Math.abs(min)%60; return `${h}h${m.toString().padStart(2,'0')}`; }
-function timeToMin(t) { const [h,m] = t.split(':'); return +h*60 + +m; }
-function isoWeek(d) {
-  const tmp = new Date(d); tmp.setHours(0,0,0,0);
-  tmp.setDate(tmp.getDate() + 3 - (tmp.getDay()+6)%7);
-  const week1 = new Date(tmp.getFullYear(), 0, 4);
-  return 1 + Math.round(((tmp-week1)/86400000 - 3 + (week1.getDay()+6)%7)/7);
+function minToHM(min) {
+  const h = Math.floor(Math.abs(min)/60), m = Math.abs(min)%60;
+  return `${h}h${m.toString().padStart(2,'0')}`;
 }
+function timeToMin(t) { const [h,m] = t.split(':'); return +h*60+ +m; }
+
+// ===================== TABLE =====================
+function buildWeekTable() {
+  const t = document.getElementById('week-table');
+  t.innerHTML = '';
+  DAYS.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'day-row';
+    const checked = week[i].on ? 'checked' : '';
+    row.innerHTML = `
+      <span class="day-label">${name}</span>
+      <input type="checkbox" ${checked} onchange="week[${i}].on=this.checked; compute()">
+      <div>
+        <label>Début</label>
+        <input type="time" value="${week[i].start}" onchange="week[${i}].start=this.value; compute()">
+      </div>
+      <div>
+        <label>Fin</label>
+        <input type="time" value="${week[i].end}" onchange="week[${i}].end=this.value; compute()">
+      </div>
+      <div style="font-size:.75rem; color:var(--muted); min-width:50px;" id="day-info-${i}"></div>
+    `;
+    t.appendChild(row);
+  });
+}
+
+function resetWeek() {
+  week = DAYS.map((_, i) => ({ on: i < 5, start: '06:00', end: '14:00' }));
+  buildWeekTable();
+  compute();
+}
+
+// ===================== CALCUL PRINCIPAL =====================
 function getShiftMinutes(startMin, endMin) {
+  // returns total minutes, handling overnight
   if (endMin > startMin) return endMin - startMin;
-  if (endMin < startMin) return (24*60 - startMin) + endMin;
+  if (endMin < startMin) return (24*60 - startMin) + endMin; // overnight
   return 0;
 }
+
 function getSegments(dateStr, startMin, endMin) {
+  // returns array of {date, from, to} segments (splitting at midnight if overnight)
   if (endMin === startMin) return [];
-  if (endMin > startMin) return [{ date: dateStr, from: startMin, to: endMin }];
-  const d = parseDate(dateStr); const next = new Date(d); next.setDate(next.getDate()+1);
-  return [{ date: dateStr, from: startMin, to: 24*60 }, { date: fmt(next), from: 0, to: endMin }];
+  if (endMin > startMin) {
+    return [{ date: dateStr, from: startMin, to: endMin }];
+  }
+  // overnight: split at midnight
+  const d = parseDate(dateStr);
+  const next = new Date(d); next.setDate(next.getDate()+1);
+  return [
+    { date: dateStr, from: startMin, to: 24*60 },
+    { date: fmt(next), from: 0, to: endMin },
+  ];
 }
+
 function categorizeMinutesWithOverride(seg, holidaySet, forcedDow) {
+  // forcedDow: si >= 0, utilise cette valeur pour dow (permet de neutraliser dimanche/férié)
   const r = {total:0, day:0, night:0, sunDay:0, sunNight:0, holDay:0, holNight:0};
   const dow = forcedDow >= 0 ? forcedDow : parseDate(seg.date).getDay();
-  const isSun = dow === 0, isHol = !!holidaySet[seg.date];
+  const isSun = dow === 0;
+  const isHol = !!holidaySet[seg.date];
   const from = seg.from, to = Math.min(seg.to, 24*60);
   if (from >= to) return r;
   r.total = to - from;
@@ -260,137 +328,45 @@ function categorizeMinutesWithOverride(seg, holidaySet, forcedDow) {
   return r;
 }
 
-function getActivePost() { return posts.find(p => p.id === activePostId); }
-function showResultTab(name, el) {
-  document.getElementById('result-global').style.display = name === 'global' ? 'block' : 'none';
-  document.getElementById('result-post').style.display = name === 'post' ? 'block' : 'none';
-  document.querySelectorAll('#result-tabs .tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
+function categorizeMinutes(seg, holidaySet) {
+  // seg: {date, from, to}
+  // returns {total, day, night, sunDay, sunNight, holDay, holNight}
+  const r = {total:0, day:0, night:0, sunDay:0, sunNight:0, holDay:0, holNight:0};
+  const d = parseDate(seg.date);
+  const dow = d.getDay(); // 0=Sun
+  const isSun = dow === 0;
+  const isHol = !!holidaySet[seg.date];
+  // boundaries: 6*60=360, 21*60=1260
+  const from = seg.from, to = Math.min(seg.to, 24*60);
+  if (from >= to) return r;
+  r.total = to - from;
 
-function renderPostsControls() {
-  const select = document.getElementById('activePostSelect');
-  select.innerHTML = posts.map(p => `<option value="${p.id}" ${p.id===activePostId?'selected':''}>${p.name}</option>`).join('');
-  const active = getActivePost();
-  document.getElementById('postNameInput').value = active ? active.name : '';
-  document.getElementById('posts-chips').innerHTML = posts.map(p => `<span class="chip ${p.id===activePostId?'active':''}" onclick="setActivePost('${p.id}')">${p.name}</span>`).join('');
-}
-function setActivePost(id) { activePostId = Number(id); renderPostsControls(); buildWeekTable(); compute(); }
-function addPost() {
-  const id = Date.now();
-  posts.push({ id, name: `Poste ${posts.length+1}`, week: JSON.parse(JSON.stringify(BASE_WEEK)) });
-  activePostId = id; renderPostsControls(); buildWeekTable(); compute();
-}
-function duplicateActivePost() {
-  const active = getActivePost();
-  if (!active) return;
-  const id = Date.now();
-  posts.push({ id, name: `${active.name} (copie)`, week: JSON.parse(JSON.stringify(active.week)) });
-  activePostId = id; renderPostsControls(); buildWeekTable(); compute();
-}
-function removeActivePost() {
-  if (posts.length === 1) return;
-  posts = posts.filter(p => p.id !== activePostId);
-  activePostId = posts[0].id;
-  renderPostsControls(); buildWeekTable(); compute();
-}
-function renameActivePost(name) {
-  const p = getActivePost(); if (!p) return;
-  p.name = name.trim() || 'Poste sans nom'; renderPostsControls(); compute();
-}
-
-function buildWeekTable() {
-  const p = getActivePost(); if (!p) return;
-  const t = document.getElementById('week-table');
-  t.innerHTML = '';
-  DAYS.forEach((name, i) => {
-    const w = p.week[i];
-    const row = document.createElement('div');
-    row.className = 'day-row';
-    row.innerHTML = `
-      <span class="day-label">${name}</span>
-      <input type="checkbox" ${w.on?'checked':''} onchange="updateActiveWeek(${i}, 'on', this.checked)">
-      <div><label>Début</label><input type="time" value="${w.start}" onchange="updateActiveWeek(${i}, 'start', this.value)"></div>
-      <div><label>Fin</label><input type="time" value="${w.end}" onchange="updateActiveWeek(${i}, 'end', this.value)"></div>
-      <div style="font-size:.75rem; color:var(--muted); min-width:50px;" id="day-info-${i}"></div>
-    `;
-    t.appendChild(row);
-  });
-}
-function updateActiveWeek(idx, key, val) {
-  const p = getActivePost(); if (!p) return;
-  p.week[idx][key] = val; compute();
-}
-function resetWeek() {
-  const p = getActivePost(); if (!p) return;
-  p.week = JSON.parse(JSON.stringify(BASE_WEEK));
-  buildWeekTable(); compute();
-}
-
-function computeForWeek(week, start, end) {
-  const holidays = buildHolidaySet(start, end);
-  const totals = {total:0, day:0, night:0, sunDay:0, sunNight:0, holDay:0, holNight:0};
-  const perDayMinutesMap = {};
-  const weekISOmap = {};
-  const periodRows = [];
-  const alerts = [];
-
-  week.forEach((w, i) => {
-    if (!w.on) return;
-    const dur = getShiftMinutes(timeToMin(w.start), timeToMin(w.end));
-    if (dur === 0) alerts.push({type:'warn', msg:`${DAYS[i]}: durée nulle.`});
-    if (dur > 12*60) alerts.push({type:'warn', msg:`${DAYS[i]}: ${minToHM(dur)} > 12h/jour (interpréter en besoin multi-ETP).`});
-  });
-
-  const activeDays = week.map((w,i)=>({...w,i})).filter(w=>w.on);
-  for (let k=0; k<activeDays.length; k++) {
-    const curr = activeDays[k], next = activeDays[(k+1)%activeDays.length];
-    if (curr===next) continue;
-    const cS=timeToMin(curr.start), cE=timeToMin(curr.end);
-    const endMin = curr.i*24*60 + (cE<=cS ? cE+24*60 : cE);
-    const daysGap = ((next.i - curr.i + 7)%7);
-    const startMin = next.i*24*60 + timeToMin(next.start) + (daysGap===0 ? 7*24*60 : 0);
-    const rest = startMin-endMin;
-    if (rest < 12*60) alerts.push({type:'warn', msg:`Repos < 12h entre ${DAYS[curr.i]} et ${DAYS[next.i]} (${minToHM(rest)}).`});
-  }
-
-  let d = new Date(start);
-  while (d <= end) {
-    const ds = fmt(d);
-    const dow = d.getDay();
-    const isoIdx = (dow + 6) % 7;
-    const w = week[isoIdx];
-    const wk = d.getFullYear()+'_W'+String(isoWeek(d)).padStart(2,'0');
-    if (!weekISOmap[wk]) weekISOmap[wk] = 0;
-
-    if (w.on) {
-      const segs = getSegments(ds, timeToMin(w.start), timeToMin(w.end));
-      let rowTotal = 0;
-      segs.forEach(seg => {
-        const segDate = parseDate(seg.date);
-        const segIsoIdx = (segDate.getDay()+6)%7;
-        // Règle poste: jour non coché => 0 minute pour ce segment.
-        if (!week[segIsoIdx].on) return;
-        const c = categorizeMinutesWithOverride(seg, holidays, segDate.getDay());
-        Object.keys(totals).forEach(k => totals[k] += c[k]);
-        rowTotal += c.total;
-      });
-      perDayMinutesMap[ds] = rowTotal;
-      weekISOmap[wk] += rowTotal;
-      const isHol = !!holidays[ds], isSun = dow===0;
-      periodRows.push({ date: ds, w, isHol, isSun, holName: holidays[ds], rowTotal });
+  function addMin(start, end, type) {
+    const mins = Math.max(0, Math.min(end, to) - Math.max(start, from));
+    if (mins <= 0) return;
+    if (isHol) {
+      if (type === 'day') r.holDay += mins; else r.holNight += mins;
+    } else if (isSun) {
+      if (type === 'day') r.sunDay += mins; else r.sunNight += mins;
     } else {
-      perDayMinutesMap[ds] = 0;
-      periodRows.push({ date: ds, w, isHol: !!holidays[ds], isSun: dow===0, holName: holidays[ds], rowTotal:0 });
+      if (type === 'day') r.day += mins; else r.night += mins;
     }
-    d.setDate(d.getDate()+1);
   }
+  // night 0–360
+  addMin(0, 360, 'night');
+  // day 360–1260
+  addMin(360, 1260, 'day');
+  // night 1260–1440
+  addMin(1260, 1440, 'night');
+  return r;
+}
 
-  Object.entries(weekISOmap).forEach(([wk, mins]) => {
-    if (mins > 48*60) alerts.push({type:'warn', msg:`${wk.replace('_',' ')}: ${minToHM(mins)} > 48h/sem (besoin multi-ETP).`});
-  });
-
-  return { totals, perDayMinutesMap, weekISOmap, alerts, periodRows, holidays };
+function isoWeek(d) {
+  const tmp = new Date(d);
+  tmp.setHours(0,0,0,0);
+  tmp.setDate(tmp.getDate() + 3 - (tmp.getDay()+6)%7);
+  const week1 = new Date(tmp.getFullYear(), 0, 4);
+  return 1 + Math.round(((tmp-week1)/86400000 - 3 + (week1.getDay()+6)%7)/7);
 }
 
 function compute() {
@@ -398,204 +374,339 @@ function compute() {
   const e = document.getElementById('dateEnd').value;
   if (!s || !e) return;
   const start = parseDate(s), end = parseDate(e);
-  if (start > end) {
-    document.getElementById('alerts').innerHTML = '<div class="alert alert-warn">⚠️ La date de fin doit être après la date de début.</div>';
-    return;
-  }
+  if (start > end) { showAlerts([{type:'err', msg:'La date de fin doit être après la date de début.'}]); return; }
 
-  const days = Math.round((end - start)/86400000)+1;
-  const months = (end.getFullYear()-start.getFullYear())*12 + end.getMonth()-start.getMonth()+1;
+  // Period info
+  const days = Math.round((end - start)/86400000) + 1;
+  const months = (end.getFullYear() - start.getFullYear())*12 + end.getMonth() - start.getMonth() + 1;
   const isoWeeks = new Set();
-  const hd = buildHolidaySet(start, end);
   let d = new Date(start);
-  while (d<=end) { isoWeeks.add(d.getFullYear()+'_'+isoWeek(d)); d.setDate(d.getDate()+1); }
+  while (d <= end) { isoWeeks.add(d.getFullYear()+'_'+isoWeek(d)); d.setDate(d.getDate()+1); }
   document.getElementById('periodInfo').innerHTML = `${days} jour(s) · ~${months} mois · ${isoWeeks.size} semaine(s) ISO`;
-  const hList = Object.entries(hd).filter(([dt])=>dt>=s&&dt<=e).sort((a,b)=>a[0].localeCompare(b[0]));
-  document.getElementById('holidays-preview').innerHTML = hList.length ? hList.map(([dt,nm])=>`<span>📌 ${fmtFR(parseDate(dt))} – ${nm}</span><br>`).join('') : 'Aucun jour férié sur la période.';
 
-  const resultsByPost = posts.map(p => {
-    const result = computeForWeek(p.week, start, end);
-    const totalHoursPeriod = result.totals.total / 60;
-    const avgMonthlyHours = totalHoursPeriod / Math.max(1, months);
-    const etpMonth = avgMonthlyHours / 151.67;
-    const annualHoursEquivalent = totalHoursPeriod * (365 / Math.max(1, days));
-    const etpYear = annualHoursEquivalent / 1645;
-    return { post: p, ...result, totalHoursPeriod, avgMonthlyHours, etpMonth, annualHoursEquivalent, etpYear };
+  // Build holiday set
+  const holidays = buildHolidaySet(start, end);
+  // Preview
+  const hList = Object.entries(holidays).filter(([dt])=>dt>=s&&dt<=e).sort((a,b)=>a[0]<b[0]?-1:1);
+  document.getElementById('holidays-preview').innerHTML = hList.length
+    ? hList.map(([dt,nm])=>`<span>📌 ${fmtFR(parseDate(dt))} – ${nm}</span><br>`).join('')
+    : 'Aucun jour férié sur la période.';
+
+  // Validate shifts
+  const errs = [];
+  week.forEach((w, i) => {
+    if (!w.on) return;
+    const sM = timeToMin(w.start), eM = timeToMin(w.end);
+    const dur = getShiftMinutes(sM, eM);
+    if (dur === 0) { errs.push({type:'err', msg:`${DAYS[i]}: durée nulle (même heure début/fin).`}); return; }
+    if (dur > 12*60) errs.push({type:'err', msg:`${DAYS[i]}: shift de ${minToHM(dur)} dépasse 12h.`});
+    document.getElementById(`day-info-${i}`).textContent = minToHM(dur);
   });
 
-  const globalTotals = {total:0, day:0, night:0, sunDay:0, sunNight:0, holDay:0, holNight:0};
-  let globalAvgMonthlyHours = 0;
-  resultsByPost.forEach(r => {
-    Object.keys(globalTotals).forEach(k => globalTotals[k] += r.totals[k]);
-    globalAvgMonthlyHours += r.avgMonthlyHours;
-  });
-  const globalETP = globalAvgMonthlyHours / 151.67;
+  // Check 12h rest
+  const activeDays = week.map((w,i)=>({...w, i})).filter(w=>w.on);
+  for (let k = 0; k < activeDays.length; k++) {
+    const curr = activeDays[k], next = activeDays[(k+1)%activeDays.length];
+    if (curr === next) continue;
+    const currEnd = timeToMin(curr.end);
+    const nextStart = timeToMin(next.start);
+    const daysGap = ((next.i - curr.i + 7) % 7);
+    // end of curr in absolute minutes from Mon 00:00
+    const currEndAbs = curr.i * 24*60 + currEnd;
+    const nextStartAbs = next.i * 24*60 + nextStart + (daysGap === 0 ? 7*24*60 : 0);
+    // handle overnight: if currEnd < currStart, add 24h to currEndAbs
+    const cS = timeToMin(curr.start), cE = timeToMin(curr.end);
+    const realEnd = cE > cS ? currEndAbs : currEndAbs + 24*60 - cS + cE - (currEndAbs - curr.i*24*60 - cS); 
+    // simpler approach
+    const endMin = curr.i*24*60 + (cE <= cS ? cE + 24*60 : cE);
+    const startMin = next.i*24*60 + timeToMin(next.start) + (daysGap === 0 ? 7*24*60 : 0);
+    const rest = startMin - endMin;
+    if (rest < 12*60) errs.push({type:'warn', msg:`Repos insuffisant entre ${DAYS[curr.i]} et ${DAYS[next.i]}: ${minToHM(rest)} (min 12h).`});
+  }
 
-  lastResults = { start, end, days, months, resultsByPost, globalTotals, globalAvgMonthlyHours, globalETP };
-  renderAlerts(resultsByPost);
-  renderResults(lastResults);
+  // Generate all daily events
+  const totals = {total:0, day:0, night:0, sunDay:0, sunNight:0, holDay:0, holNight:0};
+  const weekMap = {}; // isoKey -> minutes
+  const periodRows = [];
+  const errors_week = {};
+
+  d = new Date(start);
+  while (d <= end) {
+    const ds = fmt(d);
+    const dow = d.getDay(); // 0=Sun, 1=Mon...6=Sat
+    const isoIdx = (dow + 6) % 7; // 0=Mon...6=Sun
+    const w = week[isoIdx];
+    // Si ce jour n'est pas coché dans le poste, aucune heure ne doit être comptée,
+    // même si le jour tombe un dimanche ou un férié.
+    const wk = d.getFullYear()+'_W'+String(isoWeek(d)).padStart(2,'0');
+    if (!weekMap[wk]) weekMap[wk] = 0;
+
+    if (w.on) {
+      const segs = getSegments(ds, timeToMin(w.start), timeToMin(w.end));
+      let rowTotal = 0;
+      segs.forEach(seg => {
+        const segDate = parseDate(seg.date);
+        const segDow = segDate.getDay();
+        const segIsoIdx = (segDow + 6) % 7;
+        // Règle métier (OPTION A) : jour non coché => 0 heure comptée,
+        // y compris pour la portion après minuit d'un shift débordant.
+        if (!week[segIsoIdx].on) return;
+        const c = categorizeMinutesWithOverride(seg, holidays, segDow);
+        Object.keys(totals).forEach(k => totals[k] += c[k]);
+        rowTotal += c.total;
+      });
+      weekMap[wk] += rowTotal;
+      if (weekMap[wk] > 48*60) errors_week[wk] = weekMap[wk];
+      const isHol = !!holidays[ds];
+      const isSun = dow === 0;
+      periodRows.push({ date: ds, w, isHol, isSun, holName: holidays[ds], segs, rowTotal });
+    } else {
+      // Jour non travaillé : on note quand même dimanche/férié pour l'affichage calendrier,
+      // mais aucune heure n'est comptabilisée.
+      periodRows.push({ date: ds, w, isHol: !!holidays[ds], isSun: dow===0, holName: holidays[ds], segs:[], rowTotal:0 });
+    }
+    d.setDate(d.getDate()+1);
+  }
+
+  // Week errors
+  Object.entries(errors_week).forEach(([wk, min]) => {
+    errs.push({type:'err', msg:`Semaine ${wk.replace('_',' ')}: ${minToHM(min)} travaillés (max 48h).`});
+  });
+
+  showAlerts(errs);
+  renderKPI(totals, days, months);
   renderWeekViz();
-  renderPeriod();
-  updateDayInfos();
+  renderPeriod(periodRows, holidays);
 }
 
-function updateDayInfos() {
-  const p = getActivePost(); if (!p) return;
-  p.week.forEach((w, i) => {
-    const info = document.getElementById(`day-info-${i}`);
-    if (!info) return;
-    info.textContent = w.on ? minToHM(getShiftMinutes(timeToMin(w.start), timeToMin(w.end))) : '';
-  });
+function showAlerts(errs) {
+  const div = document.getElementById('alerts');
+  if (!errs.length) { div.innerHTML = '<div class="alert alert-ok">✅ Aucune anomalie détectée.</div>'; return; }
+  div.innerHTML = errs.map(e => `<div class="alert alert-${e.type==='err'?'err':'warn'}">
+    ${e.type==='err'?'❌':'⚠️'} ${e.msg}
+  </div>`).join('');
 }
 
-function renderAlerts(resultsByPost) {
-  const all = resultsByPost.flatMap(r => r.alerts.map(a => ({...a, post: r.post.name})));
-  if (!all.length) {
-    document.getElementById('alerts').innerHTML = '<div class="alert alert-ok">✅ Aucun indicateur de surcharge détecté.</div>';
-    return;
-  }
-  document.getElementById('alerts').innerHTML = all.map(a => `<div class="alert alert-warn">⚠️ <b>${a.post}</b> — ${a.msg}</div>`).join('');
-}
-
-function buildKpiHtml(totals, avgMonthlyHours, etpMonth, etpYear) {
-  const items = [
-    {lbl:'Heures / période', val:minToHM(totals.total)},
-    {lbl:'Heures jour', val:minToHM(totals.day + totals.sunDay + totals.holDay)},
-    {lbl:'Heures nuit', val:minToHM(totals.night + totals.sunNight + totals.holNight)},
-    {lbl:'Dimanche jour', val:minToHM(totals.sunDay)},
-    {lbl:'Dimanche nuit', val:minToHM(totals.sunNight)},
-    {lbl:'Férié jour', val:minToHM(totals.holDay)},
-    {lbl:'Férié nuit', val:minToHM(totals.holNight)},
-    {lbl:'Moyenne mensuelle', val:`${minToHM(Math.round(avgMonthlyHours*60))}/mois`},
-    {lbl:'ETP (principal)', val:`${etpMonth.toFixed(2)} ETP`},
-    {lbl:'ETP annualisé', val:`${etpYear.toFixed(2)} ETP`},
+function renderKPI(t, days, months) {
+  const holTotal = t.holDay + t.holNight;
+  const sunTotal = t.sunDay + t.sunNight;
+  const kpis = [
+    {lbl:'Total heures', val: minToHM(t.total), color:'#2563eb'},
+    {lbl:'Heures jour', val: minToHM(t.day + t.sunDay + t.holDay), color:'#d97706'},
+    {lbl:'Heures nuit', val: minToHM(t.night + t.sunNight + t.holNight), color:'#4338ca'},
+    {lbl:'Dimanche jour', val: minToHM(t.sunDay), color:'#be185d'},
+    {lbl:'Dimanche nuit', val: minToHM(t.sunNight), color:'#9d174d'},
+    {lbl:'Férié jour', val: minToHM(t.holDay), color:'#dc2626'},
+    {lbl:'Férié nuit', val: minToHM(t.holNight), color:'#991b1b'},
   ];
-  return `<div class="kpi-grid">${items.map(k=>`<div class="kpi"><div class="val">${k.val}</div><div class="lbl">${k.lbl}</div></div>`).join('')}</div>`;
-}
-
-function renderResults(payload) {
-  const globalEtpYear = (payload.globalAvgMonthlyHours*12)/1645;
-  document.getElementById('result-global').innerHTML = `
-    ${buildKpiHtml(payload.globalTotals, payload.globalAvgMonthlyHours, payload.globalETP, globalEtpYear)}
-    <div style="margin-top:12px; font-size:.82rem;"><b>Référence ETP :</b> 151,67 h/mois (1645 h/an).</div>
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="val" style="color:${k.color}">${k.val}</div><div class="lbl">${k.lbl}</div></div>`
+  ).join('');
+  // Benchmarks
+  const avgMonthly = t.total / Math.max(1, months);
+  const ref = 151.67 * 60;
+  const pct = Math.round(avgMonthly / ref * 100);
+  document.getElementById('benchmarks').innerHTML = `
+    <b>Repères :</b> Référence mensuelle = 151h40 (1645h/an)<br>
+    Moyenne sur la période : <b>${minToHM(avgMonthly)}/mois</b> (${pct}% de la référence)
+    <div class="stat-bar"><div class="stat-fill" style="width:${Math.min(pct,100)}%; background:${pct>100?'#dc2626':'#2563eb'}"></div></div>
   `;
-
-  document.getElementById('result-post').innerHTML = payload.resultsByPost.map(r => `
-    <div class="card" style="margin-bottom:10px;">
-      <h3>${r.post.name}</h3>
-      ${buildKpiHtml(r.totals, r.avgMonthlyHours, r.etpMonth, r.etpYear)}
-    </div>
-  `).join('');
-}
-
-function tBar(from, to, total) {
-  const bounds = [0, 360, 1260, 1440];
-  let html = '';
-  for (let i=0; i<bounds.length-1; i++) {
-    const s = Math.max(from, bounds[i]), e = Math.min(to, bounds[i+1]);
-    if (e <= s) continue;
-    const left = s/total*100, width = (e-s)/total*100;
-    const cls = (bounds[i] < 360 || bounds[i] >= 1260) ? 'tl-bar tl-night' : 'tl-bar tl-day';
-    html += `<div class="${cls}" style="left:${left}%;width:${width}%"></div>`;
-  }
-  return html;
 }
 
 function renderWeekViz() {
-  const p = getActivePost(); if (!p) return;
   const div = document.getElementById('tab-week');
   let html = '<div class="tl-labels"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>24h</span></div>';
   html += '<div style="display:grid; grid-template-columns: 70px 1fr; gap:6px; align-items:center;">';
   DAYS.forEach((name, i) => {
-    const w = p.week[i];
+    const w = week[i];
     html += `<div style="font-size:.8rem; font-weight:${w.on?600:400}; color:${w.on?'var(--text)':'var(--muted)'}">${name}</div>`;
-    if (!w.on) html += '<div class="timeline"></div>';
+    if (!w.on) { html += `<div class="timeline"></div>`; }
     else {
       const sM = timeToMin(w.start), eM = timeToMin(w.end);
-      const bars = eM > sM ? tBar(sM, eM, 24*60) : tBar(sM, 24*60, 24*60) + tBar(0, eM, 24*60);
-      html += `<div class="timeline">${bars}</div>`;
+      const total = 24*60;
+      let bars = '';
+      if (eM > sM) {
+        bars += tBar(sM, eM, total);
+      } else {
+        bars += tBar(sM, 24*60, total);
+        bars += tBar(0, eM, total);
+      }
+      const dur = getShiftMinutes(sM, eM);
+      html += `<div class="timeline" title="${w.start}–${w.end} (${minToHM(dur)})">${bars}</div>`;
+    }
+  });
+  html += '</div>';
+  html += `<div style="margin-top:8px; font-size:.75rem; display:flex; gap:12px;">
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#fbbf24;border-radius:2px;display:inline-block"></span>Jour (06–21h)</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#6366f1;border-radius:2px;display:inline-block"></span>Nuit (21–06h)</span>
+  </div>`;
+  div.innerHTML = html;
+}
+
+function tBar(from, to, total) {
+  const D6=360, D21=1260;
+  let html = '';
+  // split into day/night segments
+  const segs = splitDayNight(from, to);
+  segs.forEach(s => {
+    const left = s.from/total*100, width = (s.to-s.from)/total*100;
+    const cls = s.night ? 'tl-bar tl-night' : 'tl-bar tl-day';
+    html += `<div class="${cls}" style="left:${left}%;width:${width}%"></div>`;
+  });
+  return html;
+}
+
+function splitDayNight(from, to) {
+  // boundaries at 0,360,1260,1440
+  const bounds = [0, 360, 1260, 1440];
+  const segs = [];
+  for (let i = 0; i < bounds.length-1; i++) {
+    const s = Math.max(from, bounds[i]), e = Math.min(to, bounds[i+1]);
+    if (e > s) segs.push({from:s, to:e, night: bounds[i]<360||bounds[i]>=1260});
+  }
+  return segs;
+}
+
+function renderPeriod(rows, holidays) {
+  const div = document.getElementById('tab-period');
+  let html = '<div class="period-list">';
+  html += `<div class="period-row" style="font-weight:600; font-size:.8rem;">
+    <span>Date</span><span>Shift</span><span>Timeline</span><span>Durée</span>
+  </div>`;
+  rows.forEach(r => {
+    const d = parseDate(r.date);
+    const badges = (r.isSun ? '<span class="badge badge-sun">Dim</span>' : '') + (r.isHol ? `<span class="badge badge-hol" title="${r.holName}">Fér</span>` : '');
+    const bg = r.isHol ? '#fef2f2' : r.isSun ? '#fdf4ff' : '';
+    if (!r.w.on || r.segs.length === 0) {
+      html += `<div class="period-row" style="background:${bg}; color:var(--muted)">
+        <span>${fmtFR(d)}${badges}</span><span>–</span><span></span><span></span>
+      </div>`;
+    } else {
+      const sM = timeToMin(r.w.start), eM = timeToMin(r.w.end);
+      const total = 24*60;
+      let bars = eM > sM ? tBar(sM, eM, total) : tBar(sM, 24*60, total) + tBar(0, eM, total);
+      html += `<div class="period-row" style="background:${bg}">
+        <span>${fmtFR(d)}${badges}</span>
+        <span style="font-size:.75rem">${r.w.start}–${r.w.end}</span>
+        <div class="timeline" style="height:18px">${bars}</div>
+        <span>${minToHM(r.rowTotal)}</span>
+      </div>`;
     }
   });
   html += '</div>';
   div.innerHTML = html;
 }
 
-function renderPeriod() {
-  const p = getActivePost();
-  const res = lastResults?.resultsByPost.find(r => r.post.id === p?.id);
-  if (!res) return;
-  const div = document.getElementById('tab-period');
-  let html = '<div class="period-list"><div class="period-row" style="font-weight:600; font-size:.8rem;"><span>Date</span><span>Shift</span><span>Timeline</span><span>Durée</span></div>';
-  res.periodRows.forEach(r => {
-    const d = parseDate(r.date);
-    const badges = (r.isSun ? '<span class="badge badge-sun">Dim</span>' : '') + (r.isHol ? `<span class="badge badge-hol" title="${r.holName}">Fér</span>` : '');
-    const bg = r.isHol ? '#fef2f2' : r.isSun ? '#fdf4ff' : '';
-    if (!r.w.on) {
-      html += `<div class="period-row" style="background:${bg}; color:var(--muted)"><span>${fmtFR(d)}${badges}</span><span>–</span><span></span><span></span></div>`;
-    } else {
-      const sM=timeToMin(r.w.start), eM=timeToMin(r.w.end);
-      const bars = eM>sM ? tBar(sM,eM,24*60) : tBar(sM,24*60,24*60)+tBar(0,eM,24*60);
-      html += `<div class="period-row" style="background:${bg}"><span>${fmtFR(d)}${badges}</span><span style="font-size:.75rem">${r.w.start}–${r.w.end}</span><div class="timeline" style="height:18px">${bars}</div><span>${minToHM(r.rowTotal)}</span></div>`;
-    }
-  });
-  div.innerHTML = html + '</div>';
-}
-
 function showTab(name, el) {
   document.querySelectorAll('[id^=tab-]').forEach(d => d.style.display='none');
-  document.querySelectorAll('.card .tabs .tab').forEach(t => { if (!t.closest('#result-tabs')) t.classList.remove('active'); });
-  document.getElementById('tab-'+name).style.display = 'block';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).style.display='block';
   el.classList.add('active');
 }
 
 function exportCSV() {
-  if (!lastResults) return;
-  let csv = 'Poste;Date;Debut;Fin;Total_min;Jour_min;Nuit_min;Dimanche_min;Ferie_min;SemaineISO\n';
-  lastResults.resultsByPost.forEach(r => {
-    let d = new Date(lastResults.start);
-    while (d <= lastResults.end) {
-      const ds = fmt(d), dow = d.getDay(), isoIdx=(dow+6)%7;
-      const w = r.post.week[isoIdx];
-      if (w.on) {
-        const segs = getSegments(ds, timeToMin(w.start), timeToMin(w.end));
-        let tot=0, day=0, night=0, sun=0, hol=0;
-        segs.forEach(seg => {
-          const segIsoIdx = (parseDate(seg.date).getDay()+6)%7;
-          if (!r.post.week[segIsoIdx].on) return;
-          const c = categorizeMinutesWithOverride(seg, r.holidays, parseDate(seg.date).getDay());
-          tot+=c.total; day+=c.day+c.sunDay+c.holDay; night+=c.night+c.sunNight+c.holNight;
-          sun+=c.sunDay+c.sunNight; hol+=c.holDay+c.holNight;
-        });
-        csv += `${r.post.name};${fmtFR(d)};${w.start};${w.end};${tot};${day};${night};${sun};${hol};${isoWeek(d)}\n`;
-      }
-      d.setDate(d.getDate()+1);
+  const s = document.getElementById('dateStart').value;
+  const e = document.getElementById('dateEnd').value;
+  if (!s || !e) return;
+  const start = parseDate(s), end = parseDate(e);
+  const holidays = buildHolidaySet(start, end);
+  let csv = 'Date;Debut;Fin;Total_min;Jour_min;Nuit_min;Dimanche_min;Ferie_min;SemaineISO\n';
+  let d = new Date(start);
+  while (d <= end) {
+    const ds = fmt(d);
+    const dow = d.getDay(), isoIdx = (dow+6)%7;
+    const w = week[isoIdx];
+    const wk = isoWeek(d);
+    if (w.on) {
+      const segs = getSegments(ds, timeToMin(w.start), timeToMin(w.end));
+      let tot=0,day=0,night=0,sun=0,hol=0;
+      segs.forEach(seg => {
+        const segDate = parseDate(seg.date);
+        const segDow = segDate.getDay();
+        const segIsoIdx = (segDow + 6) % 7;
+        // Même règle qu'au calcul KPI : jour non coché => 0 heure exportée.
+        if (!week[segIsoIdx].on) return;
+        const c = categorizeMinutes(seg, holidays);
+        tot+=c.total; day+=c.day+c.sunDay+c.holDay; night+=c.night+c.sunNight+c.holNight;
+        sun+=c.sunDay+c.sunNight; hol+=c.holDay+c.holNight;
+      });
+      csv += `${fmtFR(d)};${w.start};${w.end};${tot};${day};${night};${sun};${hol};${wk}\n`;
     }
-  });
+    d.setDate(d.getDate()+1);
+  }
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download='planning_FR_multi_postes.csv'; a.click();
+  const a = document.createElement('a'); a.href=url; a.download='planning_FR.csv'; a.click();
 }
 
 function copyResume() {
-  if (!lastResults) return;
-  let text = '=== Planning Builder FR — Résumé ===\n';
-  text += `GLOBAL\nHeures période: ${minToHM(lastResults.globalTotals.total)}\nMoyenne mensuelle: ${minToHM(Math.round(lastResults.globalAvgMonthlyHours*60))}/mois\nETP: ${lastResults.globalETP.toFixed(2)}\n\n`;
-  lastResults.resultsByPost.forEach(r => {
-    text += `${r.post.name}\nHeures période: ${minToHM(r.totals.total)}\nMoyenne mensuelle: ${minToHM(Math.round(r.avgMonthlyHours*60))}/mois\nETP: ${r.etpMonth.toFixed(2)}\n\n`;
-  });
-  navigator.clipboard.writeText(text).then(() => alert('Résumé copié !'));
+  const kpis = document.getElementById('kpi-grid').innerText;
+  const bench = document.getElementById('benchmarks').innerText;
+  navigator.clipboard.writeText('=== Planning Builder FR ===\n' + kpis + '\n' + bench)
+    .then(() => alert('Résumé copié !'));
 }
 
-function init() {
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  const end = new Date(today.getFullYear(), today.getMonth()+1, 0);
-  document.getElementById('dateStart').value = fmt(start);
-  document.getElementById('dateEnd').value = fmt(end);
-  renderPostsControls();
+// Sanity checks console (manuel): window.runSanityChecks()
+function runSanityChecks() {
+  const prevWeek = JSON.parse(JSON.stringify(week));
+  const prevStart = document.getElementById('dateStart').value;
+  const prevEnd = document.getElementById('dateEnd').value;
+  const parseHM = txt => {
+    const m = txt.match(/(\d+)h(\d+)/);
+    return m ? (+m[1])*60 + (+m[2]) : 0;
+  };
+  const kpiVal = label => {
+    const cards = Array.from(document.querySelectorAll('#kpi-grid .kpi'));
+    const card = cards.find(c => c.querySelector('.lbl')?.innerText.trim() === label);
+    return card ? parseHM(card.querySelector('.val')?.innerText || '0h00') : 0;
+  };
+  const run = (name, setup, assert) => {
+    setup();
+    compute();
+    const ok = assert();
+    console.log(`${ok ? '✅' : '❌'} ${name}`);
+  };
+
+  // Scénario 1: dimanche OFF + samedi 21:00→05:00 => KPI dimanche = 0, total = 3h (samedi 21→24)
+  run(
+    'S1 dimanche OFF, samedi 21→05',
+    () => {
+      week = DAYS.map(() => ({on:false, start:'06:00', end:'14:00'}));
+      week[5] = {on:true, start:'21:00', end:'05:00'}; // samedi
+      week[6] = {on:false, start:'06:00', end:'14:00'}; // dimanche
+    },
+    () => kpiVal('Dimanche jour') === 0 && kpiVal('Dimanche nuit') === 0 && kpiVal('Total heures') === 180
+  );
+
+  // Scénario 2: dimanche ON + samedi 21:00→05:00 => KPI dimanche nuit > 0
+  run(
+    'S2 dimanche ON, samedi 21→05',
+    () => {
+      week = DAYS.map(() => ({on:false, start:'06:00', end:'14:00'}));
+      week[5] = {on:true, start:'21:00', end:'05:00'};
+      week[6] = {on:true, start:'06:00', end:'14:00'};
+    },
+    () => kpiVal('Dimanche nuit') > 0
+  );
+
+  // Scénario 3: dimanche OFF + horaires saisis le dimanche => aucune heure
+  run(
+    'S3 dimanche OFF, horaires dimanche saisis',
+    () => {
+      week = DAYS.map(() => ({on:false, start:'06:00', end:'14:00'}));
+      week[6] = {on:false, start:'06:00', end:'14:00'};
+    },
+    () => kpiVal('Dimanche jour') === 0 && kpiVal('Dimanche nuit') === 0 && kpiVal('Total heures') === 0
+  );
+
+  week = prevWeek;
+  document.getElementById('dateStart').value = prevStart;
+  document.getElementById('dateEnd').value = prevEnd;
   buildWeekTable();
   compute();
 }
+
+window.runSanityChecks = runSanityChecks;
 window.onload = init;
 </script>
 </body>

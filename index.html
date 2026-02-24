@@ -445,18 +445,13 @@ function compute() {
       const segs = getSegments(ds, timeToMin(w.start), timeToMin(w.end));
       let rowTotal = 0;
       segs.forEach(seg => {
-        // Pour le segment du lendemain (créneau passant minuit), on vérifie
-        // si ce jour suivant est lui-même coché dans le poste. Si non, on
-        // catégorise quand même les minutes MAIS sans les classer dimanche/férié
-        // car elles appartiennent au shift du jour d'origine (non-dimanche).
         const segDate = parseDate(seg.date);
         const segDow = segDate.getDay();
         const segIsoIdx = (segDow + 6) % 7;
-        const segIsActuallyWorked = week[segIsoIdx].on;
-        // Si le segment déborde sur un jour non coché, on neutralise dimanche/férié
-        const effectiveHolidays = (seg.date === ds || segIsActuallyWorked) ? holidays : {};
-        const forcedDow = (seg.date === ds || segIsActuallyWorked) ? segDow : -1; // -1 = pas dimanche
-        const c = categorizeMinutesWithOverride(seg, effectiveHolidays, forcedDow);
+        // Règle métier (OPTION A) : jour non coché => 0 heure comptée,
+        // y compris pour la portion après minuit d'un shift débordant.
+        if (!week[segIsoIdx].on) return;
+        const c = categorizeMinutesWithOverride(seg, holidays, segDow);
         Object.keys(totals).forEach(k => totals[k] += c[k]);
         rowTotal += c.total;
       });
@@ -626,6 +621,11 @@ function exportCSV() {
       const segs = getSegments(ds, timeToMin(w.start), timeToMin(w.end));
       let tot=0,day=0,night=0,sun=0,hol=0;
       segs.forEach(seg => {
+        const segDate = parseDate(seg.date);
+        const segDow = segDate.getDay();
+        const segIsoIdx = (segDow + 6) % 7;
+        // Même règle qu'au calcul KPI : jour non coché => 0 heure exportée.
+        if (!week[segIsoIdx].on) return;
         const c = categorizeMinutes(seg, holidays);
         tot+=c.total; day+=c.day+c.sunDay+c.holDay; night+=c.night+c.sunNight+c.holNight;
         sun+=c.sunDay+c.sunNight; hol+=c.holDay+c.holNight;
@@ -646,6 +646,67 @@ function copyResume() {
     .then(() => alert('Résumé copié !'));
 }
 
+// Sanity checks console (manuel): window.runSanityChecks()
+function runSanityChecks() {
+  const prevWeek = JSON.parse(JSON.stringify(week));
+  const prevStart = document.getElementById('dateStart').value;
+  const prevEnd = document.getElementById('dateEnd').value;
+  const parseHM = txt => {
+    const m = txt.match(/(\d+)h(\d+)/);
+    return m ? (+m[1])*60 + (+m[2]) : 0;
+  };
+  const kpiVal = label => {
+    const cards = Array.from(document.querySelectorAll('#kpi-grid .kpi'));
+    const card = cards.find(c => c.querySelector('.lbl')?.innerText.trim() === label);
+    return card ? parseHM(card.querySelector('.val')?.innerText || '0h00') : 0;
+  };
+  const run = (name, setup, assert) => {
+    setup();
+    compute();
+    const ok = assert();
+    console.log(`${ok ? '✅' : '❌'} ${name}`);
+  };
+
+  // Scénario 1: dimanche OFF + samedi 21:00→05:00 => KPI dimanche = 0, total = 3h (samedi 21→24)
+  run(
+    'S1 dimanche OFF, samedi 21→05',
+    () => {
+      week = DAYS.map(() => ({on:false, start:'06:00', end:'14:00'}));
+      week[5] = {on:true, start:'21:00', end:'05:00'}; // samedi
+      week[6] = {on:false, start:'06:00', end:'14:00'}; // dimanche
+    },
+    () => kpiVal('Dimanche jour') === 0 && kpiVal('Dimanche nuit') === 0 && kpiVal('Total heures') === 180
+  );
+
+  // Scénario 2: dimanche ON + samedi 21:00→05:00 => KPI dimanche nuit > 0
+  run(
+    'S2 dimanche ON, samedi 21→05',
+    () => {
+      week = DAYS.map(() => ({on:false, start:'06:00', end:'14:00'}));
+      week[5] = {on:true, start:'21:00', end:'05:00'};
+      week[6] = {on:true, start:'06:00', end:'14:00'};
+    },
+    () => kpiVal('Dimanche nuit') > 0
+  );
+
+  // Scénario 3: dimanche OFF + horaires saisis le dimanche => aucune heure
+  run(
+    'S3 dimanche OFF, horaires dimanche saisis',
+    () => {
+      week = DAYS.map(() => ({on:false, start:'06:00', end:'14:00'}));
+      week[6] = {on:false, start:'06:00', end:'14:00'};
+    },
+    () => kpiVal('Dimanche jour') === 0 && kpiVal('Dimanche nuit') === 0 && kpiVal('Total heures') === 0
+  );
+
+  week = prevWeek;
+  document.getElementById('dateStart').value = prevStart;
+  document.getElementById('dateEnd').value = prevEnd;
+  buildWeekTable();
+  compute();
+}
+
+window.runSanityChecks = runSanityChecks;
 window.onload = init;
 </script>
 </body>
